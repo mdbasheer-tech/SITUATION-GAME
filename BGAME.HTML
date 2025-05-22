@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Diplomatic Brain Test - 100 Levels</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1f2937, #111827);
+    color: #e5e7eb;
+    margin: 0; padding: 20px;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh;
+  }
+  #game {
+    background: #111827dd;
+    max-width: 700px; width: 100%;
+    border-radius: 15px;
+    padding: 30px 30px 40px;
+    box-shadow: 0 0 15px #3b82f6cc;
+    text-align: center;
+  }
+  h1 {
+    margin-bottom: 15px;
+    color: #3b82f6;
+  }
+  #level, #score, #difficulty, #progress {
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  #question {
+    font-size: 1.3rem;
+    margin-bottom: 25px;
+    min-height: 80px;
+  }
+  .btn {
+    background: #3b82f6;
+    color: #111827;
+    border: none;
+    border-radius: 10px;
+    padding: 15px;
+    font-size: 1.1rem;
+    margin: 10px auto;
+    width: 85%;
+    max-width: 500px;
+    cursor: pointer;
+    font-weight: 700;
+    box-shadow: 0 6px 10px #3b82f6aa;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+  .btn:hover {
+    background: #2563eb;
+    transform: scale(1.05);
+  }
+  #message {
+    margin-top: 25px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-height: 60px;
+  }
+  #restartBtn {
+    margin-top: 30px;
+    padding: 12px 28px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border-radius: 12px;
+    border: 2px solid #3b82f6;
+    background: transparent;
+    color: #3b82f6;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s, color 0.3s;
+  }
+  #restartBtn:hover {
+    background: #3b82f6;
+    color: #111827;
+  }
+</style>
+</head>
+<body>
+  <div id="game">
+    <h1>Diplomatic Brain Test</h1>
+    <div id="level"></div>
+    <div id="difficulty"></div>
+    <div id="score"></div>
+    <div id="progress"></div>
+    <div id="question">Loading question...</div>
+    <div id="options"></div>
+    <div id="message"></div>
+    <button id="restartBtn" style="display:none;">Restart Game</button>
+  </div>
+
+<script>
+  // QUESTIONS BANK (example subset; extend as needed)
+  // Difficulty tiers: easy, medium, hard
+  const questionsBank = {
+    easy: [
+      {
+        text: "Two countries share a river. What's a good first step?",
+        options: [
+          { text: "Threaten sanctions", score: 1 },
+          { text: "Propose equal sharing", score: 3 },
+          { text: "Ignore problem", score: 0 },
+          { text: "Wait and see", score: 1 },
+        ]
+      },
+      {
+        text: "Neighbor wants alliance, you should?",
+        options: [
+          { text: "Accept all demands", score: 1 },
+          { text: "Negotiate balanced terms", score: 3 },
+          { text: "Refuse and focus on defense", score: 1 },
+          { text: "Suggest trial cooperation", score: 2 },
+        ]
+      },
+      // Add 28+ more easy questions...
+    ],
+    medium: [
+      {
+        text: "Trade talks stalled. Your approach?",
+        options: [
+          { text: "Lower tariffs unconditionally", score: 1 },
+          { text: "Propose phased reductions", score: 3 },
+          { text: "Impose counter-tariffs", score: 1 },
+          { text: "Invite trade mediator", score: 2 },
+        ]
+      },
+      {
+        text: "Ally under attack; intervention risks escalation. You?",
+        options: [
+          { text: "Send troops immediately", score: 1 },
+          { text: "Offer aid & push talks", score: 3 },
+          { text: "Call UN peacekeepers", score: 2 },
+          { text: "Stay neutral", score: 1 },
+        ]
+      },
+      // Add 38+ more medium questions...
+    ],
+    hard: [
+      {
+        text: "Espionage suspected from friendly country. Response?",
+        options: [
+          { text: "Publicly accuse & cut ties", score: 1 },
+          { text: "Quiet investigation & diplomatic confront", score: 3 },
+          { text: "Ignore to keep peace", score: 1 },
+          { text: "Boost counter-intelligence", score: 2 },
+        ]
+      },
+      {
+        text: "Refugee crisis strains resources. You?",
+        options: [
+          { text: "Close borders", score: 1 },
+          { text: "Coordinate regional aid", score: 3 },
+          { text: "Appeal for international help", score: 3 },
+          { text: "Delay decisions", score: 1 },
+        ]
+      },
+      // Add 38+ more hard questions...
+    ],
+  };
+
+  // For demo, let's auto-fill some more questions to reach 30 easy, 40 medium, 40 hard.
+  function fillQuestions() {
+    const easy = questionsBank.easy.length;
+    const medium = questionsBank.medium.length;
+    const hard = questionsBank.hard.length;
+
+    for(let i = easy; i < 30; i++){
+      questionsBank.easy.push({
+        text: `Easy question ${i+1}: Choose wisely.`,
+        options: [
+          { text: "Option A", score: 1 },
+          { text: "Option B", score: 3 },
+          { text: "Option C", score: 2 },
+          { text: "Option D", score: 1 },
+        ]
+      });
+    }
+    for(let i = medium; i < 40; i++){
+      questionsBank.medium.push({
+        text: `Medium question ${i+1}: Think carefully.`,
+        options: [
+          { text: "Option A", score: 1 },
+          { text: "Option B", score: 3 },
+          { text: "Option C", score: 2 },
+          { text: "Option D", score: 1 },
+        ]
+      });
+    }
+    for(let i = hard; i < 40; i++){
+      questionsBank.hard.push({
+        text: `Hard question ${i+1}: Challenge your diplomacy.`,
+        options: [
+          { text: "Option A", score: 1 },
+          { text: "Option B", score: 3 },
+          { text: "Option C", score: 2 },
+          { text: "Option D", score: 1 },
+        ]
+      });
+    }
+  }
+  fillQuestions();
+
+  let currentLevel = 1;
+  let totalScore = 0;
+
+  // Keep track of used question indices per difficulty to avoid repeats
+  const usedIndices = {
+    easy: new Set(),
+    medium: new Set(),
+    hard: new Set(),
+  };
+
+  const levelEl = document.getElementById('level');
+  const difficultyEl = document.getElementById('difficulty');
+  const scoreEl = document.getElementById('score');
+  const questionEl = document.getElementById('question');
+  const optionsEl = document.getElementById('options');
+  const messageEl = document.getElementById('message');
+  const restartBtn = document.getElementById('restartBtn');
+
+  function getDifficulty(level) {
+    if(level <= 30) return 'easy';
+    else if(level <= 70) return 'medium';
+    else return 'hard';
+  }
+
+  function getRandomQuestion(difficulty) {
+    const pool = questionsBank[difficulty];
+    let idx;
+    do {
+      idx = Math.floor(Math.random() * pool.length);
+    } while(usedIndices[difficulty].has(idx) && usedIndices[difficulty].size < pool.length);
+    usedIndices[difficulty].add(idx);
+    return pool[idx];
+  }
+
+  function loadLevel() {
+    if(currentLevel > 100){
+      endGame();
+      return;
+    }
+    messageEl.textContent = '';
+    levelEl.textContent = `Level: ${currentLevel} / 100`;
+    const difficulty = getDifficulty(currentLevel);
+    difficultyEl.textContent = `Difficulty: ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
+    scoreEl.textContent = `Score: ${totalScore}`;
+    questionEl.textContent = 'Loading question...';
+    optionsEl.innerHTML = '';
+
+    // Pick a question randomly of current difficulty
+    const question = getRandomQuestion(difficulty);
+    questionEl.textContent = question.text;
+
+    question.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = opt.text;
+      btn.onclick = () => selectOption(opt.score);
+      optionsEl.appendChild(btn);
+    });
+  }
+
+  function selectOption(score) {
+    totalScore += score;
+    currentLevel++;
+    if(currentLevel > 100){
+      endGame();
+      return;
+    }
+    if(currentLevel % 10 === 1 && currentLevel !== 1){
+      // Show feedback every 10 levels completed
+      showMilestoneMessage();
+    } else {
+      loadLevel();
+    }
+  }
+
+  function showMilestoneMessage(){
+    const msg = `👏 Great job! You've reached Level ${currentLevel - 1}. Keep up the diplomatic thinking!`;
+    messageEl.textContent = msg;
+    optionsEl.innerHTML = '';
+    questionEl.textContent = '';
+    levelEl.textContent = '';
+    difficultyEl.textContent = '';
+    scoreEl.textContent = `Score: ${totalScore}`;
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn';
+    nextBtn.textContent = 'Next Level';
+    nextBtn.onclick = () => {
+      messageEl.textContent = '';
+      nextBtn.remove();
+      loadLevel();
+    };
+    optionsEl.appendChild(nextBtn);
+  }
+
+  function endGame(){
+    messageEl.textContent = '';
+    questionEl.textContent = '🎉 Congratulations! You completed all 100 levels.';
+    optionsEl.innerHTML = '';
+    levelEl.textContent = '';
+    difficultyEl.textContent = '';
+    scoreEl.textContent = `Final Score: ${totalScore}`;
+
+    let finalMsg = '';
+    if(totalScore > 250) finalMsg = '🌟 Diplomatic Genius! You master complex situations with ease.';
+    else if(totalScore > 180) finalMsg = '👍 Skilled Diplomat! Strong negotiation skills.';
+    else if(totalScore > 120) finalMsg = '🙂 Developing Diplomat! Room to grow.';
+    else finalMsg = '🤔 Beginner Diplomat! Keep practicing and learning.';
+
+    messageEl.textContent = finalMsg;
+    restartBtn.style.display = 'inline-block';
+  }
+
+  restartBtn.onclick = () => {
+    currentLevel = 1;
+    totalScore = 0;
+    usedIndices.easy.clear();
+    usedIndices.medium.clear();
+    usedIndices.hard.clear();
+    restartBtn.style.display = 'none';
+    loadLevel();
+  };
+
+  // Start the game
+  loadLevel();
+</script>
+</body>
+</html>
